@@ -10,7 +10,7 @@ To use the CustomEnchanted class, you need to have the Minecraft server API `@mi
 ```shell
 gh repo clone MrMaxing/custom-enchanted-bedrock
 ```
-**Note:** The `dynamic-properties-bedrock` module is required to use the `CustomEnchanted` class.
+**Note:** The `custom-enchanted-bedrock` module is required to use the `dynamic-properties-bedrock` class.
 ```shell
 gh repo clone MrMaxing/dynamic-properties-bedrock
 ```
