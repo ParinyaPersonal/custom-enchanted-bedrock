@@ -10,10 +10,29 @@ To use the CustomEnchanted class, you need to have the Minecraft server API `@mi
 ```shell
 gh repo clone MrMaxing/custom-enchanted-bedrock
 ```
-**Note:** Need to import `dynamic-properties-bedrock` module to use with this.
+**Note:** The `dynamic-properties-bedrock` module is required to use the `CustomEnchanted` class.
 ```shell
 gh repo clone MrMaxing/dynamic-properties-bedrock
 ```
+
+## Warnings
+* Need to import `dynamic-properties-bedrock` module to use with this.
+* You should learn to use the class only once.
+  * In main file 
+    ```ts
+    export const enchanted = new CustomEnchanted([
+      { name: "speed", maxLevel: 5 }
+    ])
+    ```
+  * In other files
+    ```ts
+    mc.world.afterEvents.entityHitEntity.subscribe((event) => {
+      // ...code
+      enchanted.on("speed", event.entity, (level, item) => {
+        // ...code
+      })
+    })
+    ```
 
 ## Types and Interfaces
 ### `EnchantedBase` Type
