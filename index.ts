@@ -12,6 +12,12 @@ export type EnchantedBase = {
     incompatible?: string[];
 }
 
+export type EnchantedCooldown = {
+    delay: number;
+    slot: (item: mc.ItemStack) => void;
+    notify?: (timer: number) => void;
+}
+
 export default class CustomEnchanted {
 
     private db: DynamicProperties<EnchantedBase> = new DynamicProperties<EnchantedBase>("enchanteds");
@@ -19,7 +25,7 @@ export default class CustomEnchanted {
     constructor(enchanted: EnchantedBase[]) {
         this.db.clear();
         enchanted.forEach(({ name, maxLevel, incompatible }) => {
-            const fix = name.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
+            const fix = ToolsEnchanted.name(name, false);
             this.db.set(this.db.hex(5), {
                 name: fix,
                 maxLevel,
@@ -28,37 +34,38 @@ export default class CustomEnchanted {
         });
     }
 
-    public on(name: string, player: mc.Player, callback: (level: number, item: mc.ItemStack) => void, cooldown?: { duration: number, notify?: (timer: number) => void }) {
-        const container = player.getComponent("inventory").container;
-        const item = container.getItem(player.selectedSlot);
-        const fix = name.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
+    public on(name: string, item: mc.ItemStack, callback: (level: number) => void, cooldown?: EnchantedCooldown) {
+        const fix = ToolsEnchanted.name(name, false);
         if (!this.db.array.some(v => v[1].name === fix))
             return CustomEnchanted.remove(fix, item);
         const enchanteds = CustomEnchanted.get(item);
         if (enchanteds.some(v => v.name === fix)) {
             const level = enchanteds.find(v => v.name === fix).level;
             if (cooldown) {
-                if (!item.getDynamicProperty("cooldown"))
+                if (!item.getDynamicProperty("cooldown")) {
                     item.setDynamicProperty("cooldown", new Date().toString());
+                    cooldown.slot(item);
+                }
                 const want = new Date(item.getDynamicProperty("cooldown") as string);
                 const diff = Math.abs(new Date().getTime() - want.getTime());
-                const timer = (cooldown.duration + level) - Math.ceil(diff / 1000)
-                if (Math.ceil(diff / 1000) < cooldown.duration + level)
-                    cooldown.notify(timer);
-                else {
+                const timer = (cooldown.delay + level) - Math.ceil(diff / 1000)
+                if (Math.ceil(diff / 1000) < cooldown.delay + level) {
+                    if (cooldown.notify)
+                        cooldown.notify(timer);
+                } else {
                     item.setDynamicProperty("cooldown", new Date().toString());
-                    callback(level, item);
-                    container.setItem(player.selectedSlot, item);
+                    cooldown.slot(item);
+                    callback(level);
                 }
             } else
-                callback(level, item);
+                callback(level);
         }
     }
 
     private static db: DynamicProperties<EnchantedBase> = new DynamicProperties<EnchantedBase>("enchanteds");
 
     public static max(name: string): number {
-        const fix = name.charAt(0).toUpperCase() + name.slice(1);
+        const fix = ToolsEnchanted.name(name, false);
         const enchanteds = this.db.array.find(v => v[1].name === fix);
         if (!enchanteds)
             return 0;
@@ -66,16 +73,16 @@ export default class CustomEnchanted {
     }
 
     public static incompatible(name: string, item: mc.ItemStack): boolean {
-        const fix = name.charAt(0).toUpperCase() + name.slice(1);
+        const fix = ToolsEnchanted.name(name, false);
         const enchantedsItem = this.get(item);
         const enchanteds = this.db.array.find(v => v[1].name === fix);
         if (!enchanteds[1].incompatible)
             return false;
-        return enchanteds[1].incompatible.some(v => enchantedsItem.some(v => v.name === v.name));
+        return enchanteds[1].incompatible.some(i => enchantedsItem.some(v => v.name === i));
     }
 
     public static set(enchanted: Enchanted, item: mc.ItemStack): mc.ItemStack {
-        const fix = enchanted.name.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+        const fix = ToolsEnchanted.name(enchanted.name, false);
         if (enchanted.level <= 0)
             console.error("Level must be greater than 0");
         else if (this.incompatible(enchanted.name, item))
@@ -116,7 +123,7 @@ export default class CustomEnchanted {
     }
 
     public static remove(name: string, item: mc.ItemStack): mc.ItemStack {
-        const fix = name.charAt(0).toUpperCase() + name.slice(1);
+        const fix = ToolsEnchanted.name(name, false);
         const array = item.nameTag.split("\n");
         const cut = array.slice(1, array.length);
         const enchanteds = cut.filter(s => !s.includes(fix));
@@ -168,8 +175,12 @@ class ToolsEnchanted {
         return result;
     }
 
-    public static name(typeId: string) {
-        const base = typeId.split(":")[1].split("_");
-        return base.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+    public static name(text: string, isTypeId = true) {
+        if (isTypeId) {
+            const base = text.split(":")[1].split("_");
+            return base.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+        } else {
+            return text.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
+        }
     }
 }

@@ -33,6 +33,15 @@ type Enchanted = {
 }
 ```
 
+### `EnchantedCooldown` Type
+```typescript
+type EnchantedCooldown = {
+    delay: number;
+    slot: (item: mc.ItemStack) => void;
+    notify?: (timer: number) => void;
+}
+```
+
 ## Methods
 You can use the CustomEnchanted class to create and manage items with the following methods:
 
@@ -44,15 +53,15 @@ public constructor(enchanted: EnchantedBase[]): void
 ### `on` Method
 
 ```typescript
-public on(name: string, player: mc.Player, callback: (level: number, item: mc.ItemStack) => void, cooldown?: { duration: number, notify?: (timer: number) => void }): void
+public on(name: string, item: mc.ItemStack, callback: (level: number, item: mc.ItemStack) => void, cooldown?: EnchantedCooldown): void
 ```
 
 * Description: Attaches an event handler to listen for custom enchantment triggers.
 * Parameters:
   * `name` (string): The name of the custom enchantment.
-  * `player` (mc.Player): The player triggering the event.
+  * `item` (mc.ItemStack): The item to attach the event handler to.
   * `callback` ((level: number, item: mc.ItemStack) => void): The callback function to execute when the event is triggered.
-  * `cooldown` ({ duration: number, notify?: (timer: number) => void }): Optional object specifying cooldown duration and notification callback.
+  * `cooldown` (EnchantedCooldown): The cooldown configuration for the event handler.
 * Returns: Void
 
 ### `max` Method

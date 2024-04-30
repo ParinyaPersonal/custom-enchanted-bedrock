@@ -4,7 +4,7 @@ export default class CustomEnchanted {
     constructor(enchanted) {
         this.db.clear();
         enchanted.forEach(({ name, maxLevel, incompatible }) => {
-            const fix = name.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+            const fix = ToolsEnchanted.name(name, false);
             this.db.set(this.db.hex(5), {
                 name: fix,
                 maxLevel,
@@ -12,51 +12,53 @@ export default class CustomEnchanted {
             });
         });
     }
-    on(name, player, callback, cooldown) {
-        const container = player.getComponent("inventory").container;
-        const item = container.getItem(player.selectedSlot);
-        const fix = name.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+    on(name, item, callback, cooldown) {
+        const fix = ToolsEnchanted.name(name, false);
         if (!this.db.array.some(v => v[1].name === fix))
             return CustomEnchanted.remove(fix, item);
         const enchanteds = CustomEnchanted.get(item);
         if (enchanteds.some(v => v.name === fix)) {
             const level = enchanteds.find(v => v.name === fix).level;
             if (cooldown) {
-                if (!item.getDynamicProperty("cooldown"))
+                if (!item.getDynamicProperty("cooldown")) {
                     item.setDynamicProperty("cooldown", new Date().toString());
+                    cooldown.slot(item);
+                }
                 const want = new Date(item.getDynamicProperty("cooldown"));
                 const diff = Math.abs(new Date().getTime() - want.getTime());
-                const timer = (cooldown.duration + level) - Math.ceil(diff / 1000);
-                if (Math.ceil(diff / 1000) < cooldown.duration + level)
-                    cooldown.notify(timer);
+                const timer = (cooldown.delay + level) - Math.ceil(diff / 1000);
+                if (Math.ceil(diff / 1000) < cooldown.delay + level) {
+                    if (cooldown.notify)
+                        cooldown.notify(timer);
+                }
                 else {
                     item.setDynamicProperty("cooldown", new Date().toString());
-                    callback(level, item);
-                    container.setItem(player.selectedSlot, item);
+                    cooldown.slot(item);
+                    callback(level);
                 }
             }
             else
-                callback(level, item);
+                callback(level);
         }
     }
     static db = new DynamicProperties("enchanteds");
     static max(name) {
-        const fix = name.charAt(0).toUpperCase() + name.slice(1);
+        const fix = ToolsEnchanted.name(name, false);
         const enchanteds = this.db.array.find(v => v[1].name === fix);
         if (!enchanteds)
             return 0;
         return enchanteds[1].maxLevel;
     }
     static incompatible(name, item) {
-        const fix = name.charAt(0).toUpperCase() + name.slice(1);
+        const fix = ToolsEnchanted.name(name, false);
         const enchantedsItem = this.get(item);
         const enchanteds = this.db.array.find(v => v[1].name === fix);
         if (!enchanteds[1].incompatible)
             return false;
-        return enchanteds[1].incompatible.some(v => enchantedsItem.some(v => v.name === v.name));
+        return enchanteds[1].incompatible.some(i => enchantedsItem.some(v => v.name === i));
     }
     static set(enchanted, item) {
-        const fix = enchanted.name.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+        const fix = ToolsEnchanted.name(enchanted.name, false);
         if (enchanted.level <= 0)
             console.error("Level must be greater than 0");
         else if (this.incompatible(enchanted.name, item))
@@ -96,7 +98,7 @@ export default class CustomEnchanted {
         return enchanteds;
     }
     static remove(name, item) {
-        const fix = name.charAt(0).toUpperCase() + name.slice(1);
+        const fix = ToolsEnchanted.name(name, false);
         const array = item.nameTag.split("\n");
         const cut = array.slice(1, array.length);
         const enchanteds = cut.filter(s => !s.includes(fix));
@@ -143,8 +145,13 @@ class ToolsEnchanted {
         }
         return result;
     }
-    static name(typeId) {
-        const base = typeId.split(":")[1].split("_");
-        return base.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+    static name(text, isTypeId = true) {
+        if (isTypeId) {
+            const base = text.split(":")[1].split("_");
+            return base.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+        }
+        else {
+            return text.split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+        }
     }
 }

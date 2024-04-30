@@ -12,6 +12,12 @@ export type EnchantedBase = {
     incompatible?: string[];
 }
 
+export type EnchantedCooldown = {
+    delay: number;
+    slot: (item: mc.ItemStack) => void;
+    notify?: (timer: number) => void;
+}
+
 export default class CustomEnchanted {
 
     /**
