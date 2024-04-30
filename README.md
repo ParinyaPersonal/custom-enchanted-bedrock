@@ -18,21 +18,25 @@ gh repo clone MrMaxing/dynamic-properties-bedrock
 ## Warnings
 * Need to import `dynamic-properties-bedrock` module to use with this.
 * You should learn to use the class only once.
-  * In main file 
-    ```ts
-    export const enchanted = new CustomEnchanted([
-      { name: "speed", maxLevel: 5 }
-    ])
-    ```
-  * In other files
-    ```ts
-    mc.world.afterEvents.entityHitEntity.subscribe((event) => {
-      // ...code
-      enchanted.on("speed", event.entity, (level, item) => {
-        // ...code
-      })
-    })
-    ```
+
+In main file 
+
+```ts
+export const enchanted = new CustomEnchanted([
+  { name: "speed", maxLevel: 5 }
+])
+```
+In other files
+```ts
+import { enchanted } from "<path main is have CustomEnchanted class>";
+
+mc.world.afterEvents.entityHitEntity.subscribe((event) => {
+  // ...code
+  enchanted.on("speed", event.entity, (level, item) => {
+    // ...code
+  })
+})
+```
 
 ## Types and Interfaces
 ### `EnchantedBase` Type
