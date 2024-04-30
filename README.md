@@ -1,5 +1,5 @@
 # CustomEnchanted Class for Minecraft Bedrock Edition
-The CustomEnchanted class is a TypeScript and JavaScript class that provides dynamic property management. It allows you to store and manage properties with keys and values of various types, such as strings, numbers, booleans, and objects. The class also provides methods for interacting with these properties.
+The CustomEnchanted class is a TypeScript and JavaScript class that provides utilities for managing custom enchanted items in a Minecraft Bedrock server. It allows users to create, apply, retrieve, and remove custom enchantments from items.
 
 * Updated: 2024-04-29
 * Min Version: 1.20.80
