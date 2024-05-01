@@ -102,6 +102,9 @@ export class CustomEnchanted {
         item.nameTag = [array[0], ...enchanteds].join("\n");
         return item;
     }
+    clear(item) {
+        return item.setLore([]);
+    }
 }
 class ToolsEnchanted {
     static roman(num) {

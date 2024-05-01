@@ -72,4 +72,10 @@ export class CustomEnchanted {
      * @returns {mc.ItemStack} - The item stack with the enchantment removed.
      */
     public remove(name: string, item: mc.ItemStack): mc.ItemStack
+
+    /**
+     * @param {mc.ItemStack} item - The item stack to remove the enchantment from.
+     * @returns {void} - The item stack with the enchantment cleared.
+     */
+    public clear(item: mc.ItemStack): void
 }

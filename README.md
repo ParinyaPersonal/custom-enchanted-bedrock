@@ -119,6 +119,17 @@ public remove(name: string, item: mc.ItemStack): mc.ItemStack
   * `item` (mc.ItemStack): The item to remove the enchantment from.
 * Returns: The modified item with the custom enchantment removed.
 
+#### `clear` Method
+
+```typescript
+public clear(item: mc.ItemStack): mc.ItemStack
+```
+
+* Description: Removes all custom enchantments from a given item.
+* Parameters:
+  * `item` (mc.ItemStack): The item to remove all enchantments from.
+* Returns: The modified item with all custom enchantments removed.
+
 ## Example
 ```ts
 import { CustomEnchanted } from "custom-enchanted-bedrock";

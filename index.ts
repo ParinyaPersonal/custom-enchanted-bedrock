@@ -126,6 +126,10 @@ export class CustomEnchanted {
         item.nameTag = [array[0], ...enchanteds].join("\n");
         return item;
     }
+    
+    public clear(item: mc.ItemStack) {
+        return item.setLore([]);
+    }
 }
 
 class ToolsEnchanted {
