@@ -1,4 +1,4 @@
-import DynamicProperties from "../custom-enchanted-bedrock/index";
+import DynamicProperties from "../dynamic-properties-bedrock/index";
 export class CustomEnchanted {
     enchanteds;
     notify;
@@ -66,27 +66,26 @@ export class CustomEnchanted {
             const enchanteds = this.get(item);
             const index = enchanteds.findIndex(v => v.name === fix);
             enchanteds[index].level = enchanted.level;
-            const nameTag = item.nameTag.split("\n")[0];
-            item.nameTag = [
-                `§r§b${nameTag ?? ToolsEnchanted.name(item.typeId)}`,
+            item.setLore([
+                "§rCustom Enchanted",
                 ...enchanteds.map(v => `§r§7${v.name} ${ToolsEnchanted.roman(v.level)}`)
-            ].join("\n");
+            ]);
             return item;
         }
         else {
-            item.nameTag = [
-                `§r§b${item.nameTag ?? ToolsEnchanted.name(item.typeId)}`,
+            item.setLore([
+                "§rCustom Enchanted",
+                ...this.get(item).map(v => `§r§7${v.name} ${ToolsEnchanted.roman(v.level)}`),
                 `§r§7${fix} ${ToolsEnchanted.roman(enchanted.level)}`
-            ].join("\n");
+            ]);
             return item;
         }
     }
     get(item) {
-        if (!item.nameTag)
+        if (item.getLore().length === 0)
             return [];
-        const array = item.nameTag.split("\n");
-        const cut = array.slice(1, array.length);
-        const enchanteds = cut.map(enchanted => {
+        const array = item.getLore().filter(v => v !== "§rCustom Enchanted");
+        const enchanteds = array.map(enchanted => {
             const divide = enchanted.split(" ");
             const name = divide.splice(0, divide.length - 1).join(" ");
             const level = divide[divide.length - 1];
@@ -96,14 +95,17 @@ export class CustomEnchanted {
     }
     remove(name, item) {
         const fix = ToolsEnchanted.name(name, false);
-        const array = item.nameTag.split("\n");
-        const cut = array.slice(1, array.length);
-        const enchanteds = cut.filter(s => !s.includes(fix));
-        item.nameTag = [array[0], ...enchanteds].join("\n");
+        const array = item.getLore().filter(v => v !== "§rCustom Enchanted");
+        const enchanteds = array.filter(s => !s.includes(fix));
+        const lore = [
+            "§rCustom Enchanted",
+            ...enchanteds
+        ];
+        item.setLore(enchanteds.length > 0 ? lore : undefined);
         return item;
     }
     clear(item) {
-        return item.setLore([]);
+        return item.setLore(undefined);
     }
 }
 class ToolsEnchanted {
