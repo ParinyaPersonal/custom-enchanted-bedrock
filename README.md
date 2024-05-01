@@ -49,11 +49,11 @@ interface EnchantedCooldown = {
 
 ### Constructor
 
+The class constructor initializes a new instance of CustomEnchanted. It takes an array of EnchantedData objects as a parameter, representing the initial set of custom enchantments available in the server. These enchantments are stored in the `enchanteds` property of the class.
+
 ```typescript
 constructor(enchanteds: EnchantedData[], notify?: (player: mc.Player, cooldowns: EnchantedCooldown[]) => void)
 ```
-
-The class constructor initializes a new instance of CustomEnchanted. It takes an array of EnchantedData objects as a parameter, representing the initial set of custom enchantments available in the server. These enchantments are stored in the `enchanteds` property of the class.
 
 ### Properties
 
