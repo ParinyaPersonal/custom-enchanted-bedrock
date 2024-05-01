@@ -1,81 +1,75 @@
-import * as mc from "@minecraft/server"
+import * as mc from "@minecraft/server";
 import DynamicProperties from "../dynamic-properties-bedrock/index";
 
-export type Enchanted = {
+export interface EnchantedData {
+    name: string;
+    maxLevel: number;
+    permisions: string[];
+    cooldown?: number;
+    incompatible?: string[];
+}
+
+export interface EnchantedItem {
     name: string;
     level: number;
 }
 
-export type EnchantedBase = {
+export interface EnchantedCooldown {
     name: string;
-    maxLevel: number;
-    incompatible?: string[];
+    timer: number;
 }
 
-export type EnchantedCooldown = {
-    delay: number;
-    slot: (item: mc.ItemStack) => void;
-    notify?: (timer: number) => void;
-}
-
-export default class CustomEnchanted {
+export class CustomEnchanted {
 
     /**
-     * @private
-     * @type {DynamicProperties<EnchantedBase>} - enchanteds database
+     * @type {EnchantedData[]} - An array of EnchantedData objects.
      */
-    private db: DynamicProperties<EnchantedBase>
+    public enchanteds: EnchantedData[];
 
     /**
-     * @param {EnchantedBase[]} enchanted - config of enchanteds
+     * @type {(player: mc.Player, cooldowns: EnchantedCooldown[]) => void} - A function that will be called when the cooldown expires.
      */
-    constructor(enchanted: EnchantedBase[])
+    public notify?: (player: mc.Player, cooldowns: EnchantedCooldown[]) => void
 
     /**
-     * @param {string} name - name of enchanteds
-     * @param {mc.Player} player - player
-     * @param {(level: number, item: mc.ItemStack) => void} callback - callback
-     * @param {{duration: number, notify?: (timer: number) => void}} [cooldown] - cooldown
+     * @param {EnchantedData[]} enchanteds - An array of EnchantedData objects.
+     * @param {(player: mc.Player, cooldowns: EnchantedCooldown[]) => void} notify - A function that will be called when the cooldown expires.
      */
-    public on(name: string, player: mc.Player, callback: (level: number, item: mc.ItemStack) => void, cooldown?: { duration: number, notify?: (timer: number) => void }): void
+    constructor(enchanteds: EnchantedData[], notify?: (player: mc.Player, cooldowns: EnchantedCooldown[]) => void)
 
     /**
-     * @private
-     * @static
-     * @type {DynamicProperties<EnchantedBase>} - enchanteds database
+     * @param {mc.ItemStack} item - The item stack to get the cooldown from.
+     * @returns {DynamicProperties<string>} - The cooldown for the item.
      */
-    private static db: DynamicProperties<EnchantedBase>
+    private db(item: mc.ItemStack): DynamicProperties<string>
 
     /**
-     * @param {string} name - name of enchanteds
-     * @returns {number} max level
+     * @param {string} name - The name of the enchantment.
+     * @param {mc.ItemStack} item - The item stack to add the enchantment to.
+     * @param {mc.Player} player - The player who is adding the enchantment.
+     * @param {(level: number) => void} effect - The effect of the enchantment.
+     * @param {(item: mc.ItemStack) => void} set - The function to set the item stack.
+     * @returns {void} - Events will be triggered.
      */
-    public static max(name: string): number
+    public on(name: string, item: mc.ItemStack, player: mc.Player, effect: (level: number) => void, set?: (item: mc.ItemStack) => void): void
 
     /**
-     * @param {string} name - name of enchanteds
-     * @param {mc.ItemStack} item - item
-     * @returns {boolean} incompatible
+     * @param {mc.ItemStack} item - The item stack to add the enchantment to.
+     * @param {EnchantedItem} enchanted - The enchanted item to add.
+     * @returns {mc.ItemStack} - The item stack with the enchantment added.
      */
-    public static incompatible(name: string, item: mc.ItemStack): boolean
+    public set(item: mc.ItemStack, enchanted: EnchantedItem): mc.ItemStack
 
     /**
-     * @param {Enchanted} enchanted - enchanted
-     * @param {mc.ItemStack} item - item 
-     * @returns {mc.ItemStack} item
+     * @param {mc.ItemStack} item - The item stack to remove the enchantment from.
+     * @returns {mc.ItemStack} - The item stack with the enchantment removed.
      */
-    public static set(enchanted: Enchanted, item: mc.ItemStack): mc.ItemStack
+    public get(item: mc.ItemStack): EnchantedItem[]
 
     /**
-     * @param {mc.ItemStack} item - item
-     * @returns {Enchanted[]} enchanteds
+     * @param {string} name - The name of the enchantment.
+     * @param {mc.ItemStack} item - The item stack to remove the enchantment from.
+     * @returns {mc.ItemStack} - The item stack with the enchantment removed.
      */
-    public static get(item: mc.ItemStack): Enchanted[]
-
-    /**
-     * @param {string} name - name of enchanteds
-     * @param {mc.ItemStack} item - item
-     * @returns {mc.ItemStack} item
-     */
-    public static remove(name: string, item: mc.ItemStack): mc.ItemStack
+    public remove(name: string, item: mc.ItemStack): mc.ItemStack
 }

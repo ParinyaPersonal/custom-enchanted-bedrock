@@ -1,95 +1,91 @@
-import * as mc from "@minecraft/server"
+import * as mc from "@minecraft/server";
 import DynamicProperties from "../dynamic-properties-bedrock/index";
 
-export type Enchanted = {
+export interface EnchantedData {
+    name: string;
+    maxLevel: number;
+    permisions: string[];
+    cooldown?: number;
+    incompatible?: string[];
+}
+
+export interface EnchantedItem {
     name: string;
     level: number;
 }
 
-export type EnchantedBase = {
+export interface EnchantedCooldown {
     name: string;
-    maxLevel: number;
-    incompatible?: string[];
+    timer: number;
 }
 
-export type EnchantedCooldown = {
-    delay: number;
-    slot: (item: mc.ItemStack) => void;
-    notify?: (timer: number) => void;
-}
+export class CustomEnchanted {
 
-export default class CustomEnchanted {
+    public enchanteds: EnchantedData[];
 
-    private db: DynamicProperties<EnchantedBase> = new DynamicProperties<EnchantedBase>("enchanteds");
+    public notify?: (player: mc.Player, cooldowns: EnchantedCooldown[]) => void
 
-    constructor(enchanted: EnchantedBase[]) {
-        this.db.clear();
-        enchanted.forEach(({ name, maxLevel, incompatible }) => {
-            const fix = ToolsEnchanted.name(name, false);
-            this.db.set(this.db.hex(5), {
-                name: fix,
-                maxLevel,
-                incompatible
-            });
-        });
+    constructor(enchanteds: EnchantedData[], notify?: (player: mc.Player, cooldowns: EnchantedCooldown[]) => void) {
+        this.enchanteds = enchanteds.map(v => ({ ...v, name: ToolsEnchanted.name(v.name, false) }));
+        this.notify = notify;
     }
 
-    public on(name: string, item: mc.ItemStack, callback: (level: number) => void, cooldown?: EnchantedCooldown) {
+    private db(item: mc.ItemStack) {
+        return new DynamicProperties<string>("cooldown", item);
+    };
+
+    public on(name: string, item: mc.ItemStack, player: mc.Player, effect: (level: number) => void, set?: (item: mc.ItemStack) => void) {
         const fix = ToolsEnchanted.name(name, false);
-        if (!this.db.array.some(v => v[1].name === fix))
-            return CustomEnchanted.remove(fix, item);
-        const enchanteds = CustomEnchanted.get(item);
-        if (enchanteds.some(v => v.name === fix)) {
-            const level = enchanteds.find(v => v.name === fix).level;
-            if (cooldown) {
-                if (!item.getDynamicProperty("cooldown")) {
-                    item.setDynamicProperty("cooldown", new Date().toString());
-                    cooldown.slot(item);
-                }
-                const want = new Date(item.getDynamicProperty("cooldown") as string);
-                const diff = Math.abs(new Date().getTime() - want.getTime());
-                const timer = (cooldown.delay + level) - Math.ceil(diff / 1000)
-                if (Math.ceil(diff / 1000) < cooldown.delay + level) {
-                    if (cooldown.notify)
-                        cooldown.notify(timer);
-                } else {
-                    item.setDynamicProperty("cooldown", new Date().toString());
-                    cooldown.slot(item);
-                    callback(level);
-                }
-            } else
-                callback(level);
-        }
+        if (this.get(item).length === 0)
+            return;
+        if (!this.enchanteds.some(e => e.name === fix))
+            throw new Error(`Enchanted ${fix} is not allowed`);
+        if (!this.get(item).some(v => v.name === fix))
+            return;
+        const enchanteds = this.get(item);
+        const level = enchanteds.find(v => v.name === fix).level;
+        const cooldown = this.enchanteds.find(v => v.name === fix).cooldown;
+        if (cooldown) {
+            if (!this.db(item).has(fix)) {
+                this.db(item).set(fix, new Date().toString());
+                set(item);
+            }
+            const want = new Date(this.db(item).get(fix) as string);
+            const diff = Math.abs(new Date().getTime() - want.getTime());
+            if (Math.ceil(diff / 1000) > cooldown + level) {
+                this.db(item).set(fix, new Date().toString());
+                set(item);
+                effect(level);
+            } else if (this.notify) {
+                this.notify(player, enchanteds.map(v => {
+                    const want = new Date(this.db(item).get(v.name) as string);
+                    const diff = Math.abs(new Date().getTime() - want.getTime());
+                    return {
+                        name: v.name,
+                        timer: (cooldown + level) - Math.ceil(diff / 1000)
+                    }
+                }).filter(v => v.timer > 0))
+            }
+        } else
+            effect(level);
     }
 
-    private static db: DynamicProperties<EnchantedBase> = new DynamicProperties<EnchantedBase>("enchanteds");
-
-    public static max(name: string): number {
-        const fix = ToolsEnchanted.name(name, false);
-        const enchanteds = this.db.array.find(v => v[1].name === fix);
-        if (!enchanteds)
-            return 0;
-        return enchanteds[1].maxLevel
-    }
-
-    public static incompatible(name: string, item: mc.ItemStack): boolean {
-        const fix = ToolsEnchanted.name(name, false);
-        const enchantedsItem = this.get(item);
-        const enchanteds = this.db.array.find(v => v[1].name === fix);
-        if (!enchanteds[1].incompatible)
-            return false;
-        return enchanteds[1].incompatible.some(i => enchantedsItem.some(v => v.name === i));
-    }
-
-    public static set(enchanted: Enchanted, item: mc.ItemStack): mc.ItemStack {
+    public set(item: mc.ItemStack, enchanted: EnchantedItem) {
         const fix = ToolsEnchanted.name(enchanted.name, false);
+        const { permisions, incompatible } = this.enchanteds.find(e => e.name === fix)
         if (enchanted.level <= 0)
-            console.error("Level must be greater than 0");
-        else if (this.incompatible(enchanted.name, item))
-            console.error(`${enchanted.name} is incompatible with ${item.typeId}`);
-        else if (this.max(fix) < enchanted.level)
-            console.error(`${enchanted.name} has reached its maximum level (${this.max(fix)})`);
-        else if (this.get(item).some(v => v.name === fix)) {
+            throw new Error("Level must be greater than 0");
+        if (permisions.length > 0)
+            if (!permisions.some(v => v === item.typeId))
+                throw new Error(`Item ${item.typeId} is not allowed`)
+        if (!this.enchanteds.some(e => e.name === fix))
+            throw new Error(`Enchanted ${fix} is not allowed`)
+        if (this.enchanteds.some(e => e.maxLevel < enchanted.level))
+            throw new Error(`Enchanted ${fix} has reached its maximum level (${this.enchanteds.find(e => e.name === fix).maxLevel})`)
+        if (incompatible?.length > 0)
+            if (this.enchanteds.some(e => e.incompatible?.some(i => i !== fix)))
+                throw new Error(`Enchanted ${fix} is incompatible`)
+        if (this.get(item).some(v => v.name === fix)) {
             const enchanteds = this.get(item);
             const index = enchanteds.findIndex(v => v.name === fix);
             enchanteds[index].level = enchanted.level;
@@ -108,7 +104,7 @@ export default class CustomEnchanted {
         }
     }
 
-    public static get(item: mc.ItemStack): Enchanted[] {
+    public get(item: mc.ItemStack) {
         if (!item.nameTag)
             return [];
         const array = item.nameTag.split("\n");
@@ -122,7 +118,7 @@ export default class CustomEnchanted {
         return enchanteds;
     }
 
-    public static remove(name: string, item: mc.ItemStack): mc.ItemStack {
+    public remove(name: string, item: mc.ItemStack): mc.ItemStack {
         const fix = ToolsEnchanted.name(name, false);
         const array = item.nameTag.split("\n");
         const cut = array.slice(1, array.length);

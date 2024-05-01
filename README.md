@@ -10,142 +10,147 @@ To use the CustomEnchanted class, you need to have the Minecraft server API `@mi
 ```shell
 gh repo clone MrMaxing/custom-enchanted-bedrock
 ```
-**Note:** The `custom-enchanted-bedrock` module is required to use the `dynamic-properties-bedrock` class.
 ```shell
 gh repo clone MrMaxing/dynamic-properties-bedrock
 ```
+**Note:** The `custom-enchanted-bedrock` module is required to use the `dynamic-properties-bedrock` class and don't forget to fix path to import `dynamic-properties-bedrock` class.
 
-## Warnings
-* Need to import `dynamic-properties-bedrock` module to use with this.
-* You should learn to use the class only once.
+## Usage
+The CustomEnchanted class provides several methods and properties that can be used to create, apply, retrieve, and remove custom enchantments from items.
 
-In main file 
+### Interfaces
 
-```ts
-export const enchanted = new CustomEnchanted([
-  { name: "speed", maxLevel: 5 }
-])
-```
-In other files
-```ts
-import { enchanted } from "<path main is have CustomEnchanted class>";
-
-mc.world.afterEvents.entityHitEntity.subscribe((event) => {
-  // ...code
-  enchanted.on("speed", event.entity, (level, item) => {
-    // ...code
-  })
-})
-```
-
-## Types and Interfaces
-### `EnchantedBase` Type
+#### `EnchantedData` Interface
 ```typescript
-type EnchantedBase = {
+export interface EnchantedData {
     name: string;
     maxLevel: number;
+    permisions: string[];
+    cooldown?: number;
     incompatible?: string[];
 }
 ```
 
-### `Enchanted` Type
+#### `EnchantedItem` Interface
 ```typescript
-type Enchanted = {
+interface EnchantedItem {
     name: string;
     level: number;
 }
 ```
 
-### `EnchantedCooldown` Type
+#### `EnchantedCooldown` Interface
 ```typescript
-type EnchantedCooldown = {
-    delay: number;
-    slot: (item: mc.ItemStack) => void;
-    notify?: (timer: number) => void;
+interface EnchantedCooldown = {
+    name: string;
+    timer: number;
 }
 ```
 
-## Methods
-You can use the CustomEnchanted class to create and manage items with the following methods:
-
 ### Constructor
-```typescript
-public constructor(enchanted: EnchantedBase[]): void
-```
-
-### `on` Method
 
 ```typescript
-public on(name: string, item: mc.ItemStack, callback: (level: number, item: mc.ItemStack) => void, cooldown?: EnchantedCooldown): void
+constructor(enchanteds: EnchantedData[], notify?: (player: mc.Player, cooldowns: EnchantedCooldown[]) => void)
 ```
 
-* Description: Attaches an event handler to listen for custom enchantment triggers.
+The class constructor initializes a new instance of CustomEnchanted. It takes an array of EnchantedData objects as a parameter, representing the initial set of custom enchantments available in the server. These enchantments are stored in the `enchanteds` property of the class.
+
+### Properties
+
+#### `enchanteds` Property
+
+* Type: `EnchantedData[]`
+* Description: An array containing information about the available custom enchantments.
+
+#### `notify` Property
+
+* Type: `(player: mc.Player, cooldowns: EnchantedCooldown[]) => void`
+* Description: An optional callback function that notifies players about cooldowns on custom enchantments.
+
+### Methods
+
+#### `on` Method
+
+```typescript
+public on(name: string, item: mc.ItemStack, player: mc.Player, effect: (level: number) => void, set?: (item: mc.ItemStack) => void): void
+```
+
+* Description: Attaches an event listener to listen for custom enchantment triggers.
 * Parameters:
   * `name` (string): The name of the custom enchantment.
-  * `item` (mc.ItemStack): The item to attach the event handler to.
-  * `callback` ((level: number, item: mc.ItemStack) => void): The callback function to execute when the event is triggered.
-  * `cooldown` (EnchantedCooldown): The cooldown configuration for the event handler.
+  * `item` (mc.ItemStack): The item associated with the event.
+  * `player` (mc.Player): The player triggering the event.
+  * `effect` ((level: number) => void): The effect to execute when the event is triggered.
+  * `set` ((item: mc.ItemStack) => void): Optional function to set the item after applying the enchantment.
 * Returns: Void
 
-### `max` Method
+#### `set` Method
 
 ```typescript
-public static max(name: string): number
+public set(item: mc.ItemStack, enchanted: EnchantedItem): mc.ItemStack
 ```
 
-* Description: Retrieves the maximum level of a custom enchantment.
+* Description: Applies a custom enchantment to a given item.
 * Parameters:
-  * `name` (string): The name of the custom enchantment.
-* Returns: The maximum level of the custom enchantment.
-
-### `incompatible` Method
-
-```typescript
-public static incompatible(name: string, item: mc.ItemStack): boolean
-```
-
-* Description: Checks if a custom enchantment is incompatible with an item.
-* Parameters:
-  * `name` (string): The name of the custom enchantment.
-  * `item` (mc.ItemStack): The item to check compatibility with.
-* Returns: True if the custom enchantment is incompatible with the item, otherwise false.
-
-### `set` Method
-
-```typescript
-public static set(enchanted: Enchanted, item: mc.ItemStack): mc.ItemStack
-```
-
-* Description: Applies a custom enchantment to an item.
-* Parameters:
-  * `enchanted` (Enchanted): The custom enchantment to apply.
   * `item` (mc.ItemStack): The item to apply the enchantment to.
+  * `enchanted` (EnchantedItem): The custom enchantment to apply.
 * Returns: The modified item with the custom enchantment applied.
 
-### `get` Method
+#### `get` Method
 
 ```typescript
-public static get(item: mc.ItemStack): Enchanted[]
+public get(item: mc.ItemStack): EnchantedItem[]
 ```
 
-* Description: Retrieves all custom enchantments applied to an item.
+* Description: Retrieves all custom enchantments applied to a given item.
 * Parameters:
   * `item` (mc.ItemStack): The item to retrieve enchantments from.
 * Returns: An array of custom enchantments applied to the item.
 
-### `remove` Method
+#### `remove` Method
 
 ```typescript
-public static remove(name: string, item: mc.ItemStack): mc.ItemStack
+public remove(name: string, item: mc.ItemStack): mc.ItemStack
 ```
 
-* Description: Removes a custom enchantment from an item.
+* Description: Removes a specific custom enchantment from a given item.
 * Parameters:
   * `name` (string): The name of the custom enchantment to remove.
   * `item` (mc.ItemStack): The item to remove the enchantment from.
 * Returns: The modified item with the custom enchantment removed.
 
+## Example
+```ts
+import { CustomEnchanted } from "custom-enchanted-bedrock";
+
+export const enchanted = new CustomEnchanted([
+  { name: "speed", maxLevel: 5, permisions: [
+    "minecraft:netherite_sword",
+    "minecraft:diamond_sword",
+    "minecraft:golden_sword",
+    "minecraft:iron_sword",
+    "minecraft:stone_sword",
+    "minecraft:wooden_sword",
+  ], cooldown: 10 },
+  ], (player, cooldowns) => {
+    player.onScreenDisplay.setActionBar(cooldowns.map(v => `${v.name} cooldown ${v.timer}s`).join("\n"))
+})
+
+mc.world.afterEvents.entityHitEntity.subscribe((event) => {
+  // ...code
+  const container = player.getComponent("inventory").container;
+  const item = container.getItem(player.selectedSlot);
+  if (!item) return;
+
+  enchanted.on("speed", item, player, (level) => {
+    // ...code
+  }, (item) => {
+    container.setItem(player.selectedSlot, item);
+  })
+})
+```
+
 ## License
-This code is open-source and available under the MIT License.
+This code is open-source and available under the Apache-2.0 license.
 
 Feel free to use and modify it according to your needs. If you have any questions or encounter issues, please create an issue on the GitHub repository or contact the author for support.
