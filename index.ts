@@ -1,5 +1,5 @@
 import * as mc from "@minecraft/server";
-import DynamicProperties from "./dynamic-properties";
+import DynamicProperties from "../custom-enchanted-bedrock/index";
 
 export interface EnchantedData {
     name: string;

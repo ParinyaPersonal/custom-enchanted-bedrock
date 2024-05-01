@@ -1,4 +1,4 @@
-import DynamicProperties from "./dynamic-properties";
+import DynamicProperties from "../custom-enchanted-bedrock/index";
 export class CustomEnchanted {
     enchanteds;
     notify;
