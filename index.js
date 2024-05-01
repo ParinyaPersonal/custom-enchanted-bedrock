@@ -1,4 +1,4 @@
-import DynamicProperties from "../dynamic-properties-bedrock/index";
+import DynamicProperties from "./dynamic-properties";
 export class CustomEnchanted {
     enchanteds;
     notify;
@@ -10,7 +10,7 @@ export class CustomEnchanted {
         return new DynamicProperties("cooldown", item);
     }
     ;
-    on(name, item, player, effect, set) {
+    async on(name, item, player, effect, set) {
         const fix = ToolsEnchanted.name(name, false);
         if (this.get(item).length === 0)
             return;
@@ -57,7 +57,7 @@ export class CustomEnchanted {
                 throw new Error(`Item ${item.typeId} is not allowed`);
         if (!this.enchanteds.some(e => e.name === fix))
             throw new Error(`Enchanted ${fix} is not allowed`);
-        if (this.enchanteds.some(e => e.maxLevel < enchanted.level))
+        if (this.enchanteds.find(e => e.name === fix).maxLevel < enchanted.level)
             throw new Error(`Enchanted ${fix} has reached its maximum level (${this.enchanteds.find(e => e.name === fix).maxLevel})`);
         if (incompatible?.length > 0)
             if (this.enchanteds.some(e => e.incompatible?.some(i => i !== fix)))

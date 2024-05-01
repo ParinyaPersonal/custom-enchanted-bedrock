@@ -34,7 +34,7 @@ export class CustomEnchanted {
         return new DynamicProperties<string>("cooldown", item);
     };
 
-    public on(name: string, item: mc.ItemStack, player: mc.Player, effect: (level: number) => void, set?: (item: mc.ItemStack) => void) {
+    public async on(name: string, item: mc.ItemStack, player: mc.Player, effect: (level: number) => void, set?: (item: mc.ItemStack) => void) {
         const fix = ToolsEnchanted.name(name, false);
         if (this.get(item).length === 0)
             return;
@@ -80,7 +80,7 @@ export class CustomEnchanted {
                 throw new Error(`Item ${item.typeId} is not allowed`)
         if (!this.enchanteds.some(e => e.name === fix))
             throw new Error(`Enchanted ${fix} is not allowed`)
-        if (this.enchanteds.some(e => e.maxLevel < enchanted.level))
+        if (this.enchanteds.find(e => e.name === fix).maxLevel < enchanted.level)
             throw new Error(`Enchanted ${fix} has reached its maximum level (${this.enchanteds.find(e => e.name === fix).maxLevel})`)
         if (incompatible?.length > 0)
             if (this.enchanteds.some(e => e.incompatible?.some(i => i !== fix)))
