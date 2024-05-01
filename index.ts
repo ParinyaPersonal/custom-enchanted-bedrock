@@ -1,5 +1,5 @@
 import * as mc from "@minecraft/server";
-import DynamicProperties from "../dynamic-properties-bedrock/index";
+import DynamicProperties from "./dynamic-properties";
 
 export interface EnchantedData {
     name: string;
@@ -83,7 +83,7 @@ export class CustomEnchanted {
         if (this.enchanteds.find(e => e.name === fix).maxLevel < enchanted.level)
             throw new Error(`Enchanted ${fix} has reached its maximum level (${this.enchanteds.find(e => e.name === fix).maxLevel})`)
         if (incompatible?.length > 0)
-            if (this.enchanteds.some(e => e.incompatible?.some(i => i !== fix)))
+            if (incompatible?.some(i => i === fix))
                 throw new Error(`Enchanted ${fix} is incompatible`)
         if (this.get(item).some(v => v.name === fix)) {
             const enchanteds = this.get(item);
